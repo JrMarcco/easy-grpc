@@ -52,17 +52,3 @@ func BizIdFromContext(ctx context.Context) (uint64, bool) {
 	bizId, ok := val.(uint64)
 	return bizId, ok
 }
-
-type contextKeyBizKey struct{}
-
-// WithBizKey 在 context.Context 写入 business key
-func WithBizKey(ctx context.Context, bizKey string) context.Context {
-	return context.WithValue(ctx, contextKeyBizKey{}, bizKey)
-}
-
-// BizKeyFromContext 从 context.Context 获取 business key
-func BizKeyFromContext(ctx context.Context) (string, bool) {
-	val := ctx.Value(contextKeyBizKey{})
-	bizKey, ok := val.(string)
-	return bizKey, ok
-}

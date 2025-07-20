@@ -12,7 +12,7 @@ import (
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
-type RegistryBuilder struct {
+type Builder struct {
 	etcdClient *clientv3.Client
 
 	keyPrefix string
@@ -35,18 +35,18 @@ type RegistryBuilder struct {
 }
 
 // LeaseTTL 设置租约 ttl，单位为秒
-func (b *RegistryBuilder) LeaseTTL(ttl int) *RegistryBuilder {
+func (b *Builder) LeaseTTL(ttl int) *Builder {
 	b.leaseTTL = ttl
 	return b
 }
 
 // KeyPrefix 设置注册服务 key 前缀
-func (b *RegistryBuilder) KeyPrefix(keyPrefix string) *RegistryBuilder {
+func (b *Builder) KeyPrefix(keyPrefix string) *Builder {
 	b.keyPrefix = keyPrefix
 	return b
 }
 
-func (b *RegistryBuilder) Build() (*Registry, error) {
+func (b *Builder) Build() (*Registry, error) {
 	if b.leaseTTL <= 0 {
 		return nil, errs.ErrInvalidEtcdLeaseTTL
 	}
@@ -62,8 +62,8 @@ func (b *RegistryBuilder) Build() (*Registry, error) {
 	}, nil
 }
 
-func NewRegistryBuilder(etcdClient *clientv3.Client) *RegistryBuilder {
-	return &RegistryBuilder{
+func NewBuilder(etcdClient *clientv3.Client) *Builder {
+	return &Builder{
 		etcdClient: etcdClient,
 		keyPrefix:  "/easy-grpc/",
 		leaseTTL:   30,

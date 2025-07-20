@@ -2,7 +2,12 @@ module github.com/JrMarcco/easy-grpc
 
 go 1.24.5
 
-require go.etcd.io/etcd/client/v3 v3.6.2
+require (
+	github.com/JrMarcco/easy-kit v0.0.7
+	github.com/cespare/xxhash/v2 v2.3.0
+	go.etcd.io/etcd/client/v3 v3.6.2
+	google.golang.org/grpc v1.73.0
+)
 
 require (
 	github.com/coreos/go-semver v0.3.1 // indirect
@@ -19,6 +24,5 @@ require (
 	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250715232539-7130f93afb79 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250715232539-7130f93afb79 // indirect
-	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
