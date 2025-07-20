@@ -150,7 +150,7 @@ func (r *Registry) serviceKey(serviceName string) string {
 }
 
 func (r *Registry) instanceKey(si registry.ServiceInstance) string {
-	return fmt.Sprintf("%s/%s/%s", r.keyPrefix, si.Name, si.Addr)
+	return fmt.Sprintf("/%s/%s/%s", r.keyPrefix, si.Name, si.Addr)
 }
 
 func (r *Registry) Close() error {
