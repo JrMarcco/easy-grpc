@@ -60,7 +60,7 @@ func (p *HashBalancer) hashFromPickInfo(info balancer.PickInfo) (uint32, error) 
 	}
 
 	// 获取 bizId
-	bizId, ok := client.BizIdFromContext(ctx)
+	bizId, ok := client.ContextBizId(ctx)
 	if !ok {
 		return 0, fmt.Errorf("[easy-grpc] bizId not found in context")
 	}

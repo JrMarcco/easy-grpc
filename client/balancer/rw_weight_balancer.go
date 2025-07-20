@@ -98,7 +98,7 @@ func (p *RwWeightBalancer) Pick(info balancer.PickInfo) (balancer.PickResult, er
 		nodeGroup := src.group
 		src.mu.RUnlock()
 
-		group, ok := client.GroupFromContext(ctx)
+		group, ok := client.ContextGroup(ctx)
 		return src, ok && group == nodeGroup
 	})
 
@@ -178,7 +178,7 @@ func (p *RwWeightBalancer) Pick(info balancer.PickInfo) (balancer.PickResult, er
 }
 
 func (p *RwWeightBalancer) isWriteReq(ctx context.Context) bool {
-	if reqType, ok := client.ReqTypeFromContext(ctx); ok {
+	if reqType, ok := client.ContextReqType(ctx); ok {
 		return reqType == 1
 	}
 	return false
