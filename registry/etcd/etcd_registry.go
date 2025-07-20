@@ -65,7 +65,7 @@ func (b *Builder) Build() (*Registry, error) {
 func NewBuilder(etcdClient *clientv3.Client) *Builder {
 	return &Builder{
 		etcdClient: etcdClient,
-		keyPrefix:  "/easy-grpc/",
+		keyPrefix:  "easy-grpc",
 		leaseTTL:   30,
 	}
 }
