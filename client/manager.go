@@ -10,7 +10,52 @@ import (
 	"google.golang.org/grpc/resolver"
 )
 
-type ManagerOpt[T any] func(*Manager[T])
+type ManagerBuilder[T any] struct {
+	rb resolver.Builder
+	bb balancer.Builder
+
+	insecure bool
+
+	creator func(conn *grpc.ClientConn) T
+}
+
+func (b *ManagerBuilder[T]) ResolverBuilder(rb resolver.Builder) *ManagerBuilder[T] {
+	b.rb = rb
+	return b
+}
+
+func (b *ManagerBuilder[T]) BalancerBuilder(bb balancer.Builder) *ManagerBuilder[T] {
+	b.bb = bb
+	return b
+}
+
+func (b *ManagerBuilder[T]) Insecure() *ManagerBuilder[T] {
+	b.insecure = true
+	return b
+}
+
+func (b *ManagerBuilder[T]) Creator(creator func(conn *grpc.ClientConn) T) *ManagerBuilder[T] {
+	b.creator = creator
+	return b
+}
+
+func (b *ManagerBuilder[T]) Build() *Manager[T] {
+	return &Manager[T]{
+		rb:       b.rb,
+		bb:       b.bb,
+		insecure: b.insecure,
+		creator:  b.creator,
+	}
+}
+
+func NewManagerBuilder[T any](rb resolver.Builder, bb balancer.Builder, creator func(conn *grpc.ClientConn) T) *ManagerBuilder[T] {
+	return &ManagerBuilder[T]{
+		rb:       rb,
+		bb:       bb,
+		creator:  creator,
+		insecure: false,
+	}
+}
 
 type Manager[T any] struct {
 	grpcClients xsync.Map[string, T]
@@ -56,26 +101,4 @@ func (m *Manager[T]) dial(serviceName string) (*grpc.ClientConn, error) {
 
 	addr := fmt.Sprintf("%s:///%s", m.rb.Scheme(), serviceName)
 	return grpc.NewClient(addr, opts...)
-}
-
-func ManagerWithInsecure() ManagerOpt[any] {
-	return func(m *Manager[any]) {
-		m.insecure = true
-	}
-}
-
-func NewManager[T any](
-	rb resolver.Builder, bb balancer.Builder, creator func(conn *grpc.ClientConn) T, opts ...ManagerOpt[T],
-) *Manager[T] {
-	manager := &Manager[T]{
-		rb:      rb,
-		bb:      bb,
-		creator: creator,
-	}
-
-	for _, opt := range opts {
-		opt(manager)
-	}
-
-	return manager
 }
