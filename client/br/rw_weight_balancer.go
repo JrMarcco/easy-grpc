@@ -1,4 +1,4 @@
-package bl
+package br
 
 import (
 	"context"
@@ -93,14 +93,22 @@ func (p *RwWeightBalancer) Pick(info balancer.PickInfo) (balancer.PickResult, er
 
 	// 获取候选节点
 	ctx := info.Ctx
-	candidateNodes := slice.FilterMap(p.nodes, func(_ int, src *rwWeightServiceNode) (*rwWeightServiceNode, bool) {
-		src.mu.RLock()
-		nodeGroup := src.group
-		src.mu.RUnlock()
+	group, hasGroup := client.ContextGroup(ctx)
 
-		group, ok := client.ContextGroup(ctx)
-		return src, ok && group == nodeGroup
-	})
+	var candidateNodes []*rwWeightServiceNode
+	if !hasGroup {
+		// ctx 中没有 group 字段，不进行筛选，返回所有节点
+		candidateNodes = p.nodes
+	} else {
+		// ctx 中有 group 字段，进行筛选
+		candidateNodes = slice.FilterMap(p.nodes, func(_ int, src *rwWeightServiceNode) (*rwWeightServiceNode, bool) {
+			src.mu.RLock()
+			nodeGroup := src.group
+			src.mu.RUnlock()
+
+			return src, group == nodeGroup
+		})
+	}
 
 	if len(candidateNodes) == 0 {
 		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable

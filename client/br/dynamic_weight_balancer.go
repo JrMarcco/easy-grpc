@@ -1,4 +1,4 @@
-package bl
+package br
 
 import (
 	"context"
@@ -9,52 +9,52 @@ import (
 	"github.com/JrMarcco/easy-grpc/client"
 	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/balancer/base"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-var _ base.PickerBuilder = (*WeightBalancerBuilder)(nil)
+var _ base.PickerBuilder = (*DynamicWeightBalancerBuilder)(nil)
 
-type WeightBalancerBuilder struct{}
+type DynamicWeightBalancerBuilder struct{}
 
-func (w *WeightBalancerBuilder) Build(info base.PickerBuildInfo) balancer.Picker {
-	nodes := make([]*weightServiceNode, 0, len(info.ReadySCs))
+func (b *DynamicWeightBalancerBuilder) Build(info base.PickerBuildInfo) balancer.Picker {
+	nodes := make([]*dynamicServiceNode, 0, len(info.ReadySCs))
 
 	for cc, ccInfo := range info.ReadySCs {
 		weight, _ := ccInfo.Address.Attributes.Value(client.AttrNameWeight).(uint32)
-		nodes = append(nodes, &weightServiceNode{
-			cc:            cc,
-			weight:        weight,
-			currentWeight: weight,
+		nodes = append(nodes, &dynamicServiceNode{
+			cc:              cc,
+			weight:          weight,
+			currentWeight:   weight,
+			efficientWeight: weight,
 		})
 	}
 
-	return &WeightBalancer{
-		nodes: nodes,
-	}
+	return &DynamicWeightBalancer{nodes: nodes}
 }
 
-var _ balancer.Picker = (*WeightBalancer)(nil)
+var _ balancer.Picker = (*DynamicWeightBalancer)(nil)
 
-type WeightBalancer struct {
-	nodes []*weightServiceNode
+type DynamicWeightBalancer struct {
+	nodes []*dynamicServiceNode
 }
 
-func (w *WeightBalancer) Pick(_ balancer.PickInfo) (balancer.PickResult, error) {
-	if len(w.nodes) == 0 {
+func (p *DynamicWeightBalancer) Pick(_ balancer.PickInfo) (balancer.PickResult, error) {
+	if len(p.nodes) == 0 {
 		return balancer.PickResult{}, balancer.ErrNoSubConnAvailable
 	}
 
 	var totalWeight uint32
-	var selectedNode *weightServiceNode
-
-	for _, node := range w.nodes {
-		node.mu.Lock()
+	var selectedNode *dynamicServiceNode
+	for _, node := range p.nodes {
+		node.mu.RLock()
 		totalWeight += node.efficientWeight
 		node.currentWeight += node.efficientWeight
 
 		if selectedNode == nil || selectedNode.currentWeight < node.currentWeight {
 			selectedNode = node
 		}
-		node.mu.Unlock()
+		node.mu.RUnlock()
 	}
 
 	if selectedNode == nil {
@@ -71,14 +71,25 @@ func (w *WeightBalancer) Pick(_ balancer.PickInfo) (balancer.PickResult, error) 
 			selectedNode.mu.Lock()
 			defer selectedNode.mu.Unlock()
 
-			const twice = 2
 			if info.Err == nil {
+				const twice = 2
+
 				selectedNode.efficientWeight++
 				selectedNode.efficientWeight = max(selectedNode.efficientWeight, selectedNode.weight*twice)
 				return
 			}
 
 			if errors.Is(info.Err, context.DeadlineExceeded) || errors.Is(info.Err, io.EOF) {
+				selectedNode.efficientWeight = 1
+				return
+			}
+
+			res, _ := status.FromError(info.Err)
+			switch res.Code() {
+			case codes.Unavailable:
+				selectedNode.efficientWeight = 1
+				return
+			default:
 				if selectedNode.efficientWeight > 1 {
 					selectedNode.efficientWeight--
 				}
@@ -87,7 +98,7 @@ func (w *WeightBalancer) Pick(_ balancer.PickInfo) (balancer.PickResult, error) 
 	}, nil
 }
 
-type weightServiceNode struct {
+type dynamicServiceNode struct {
 	mu sync.RWMutex
 
 	cc              balancer.SubConn
