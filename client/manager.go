@@ -52,8 +52,8 @@ func (m *Manager[T]) dial(serviceName string) (*grpc.ClientConn, error) {
 		))
 	}
 
-	add := fmt.Sprintf("%s:///%s", m.rb.Scheme(), serviceName)
-	return grpc.NewClient(add, opts...)
+	addr := fmt.Sprintf("%s:///%s", m.rb.Scheme(), serviceName)
+	return grpc.NewClient(addr, opts...)
 }
 
 func NewManager[T any](
