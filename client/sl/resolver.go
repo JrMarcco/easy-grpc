@@ -1,4 +1,4 @@
-package resolver
+package sl
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 	"google.golang.org/grpc/resolver"
 )
 
-var _ resolver.Builder = (*Builder)(nil)
+var _ resolver.Builder = (*ResolverBuilder)(nil)
 
-type Builder struct {
+type ResolverBuilder struct {
 	registry registry.Registry
 	timeout  time.Duration
 }
 
-func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolver.BuildOptions) (resolver.Resolver, error) {
+func (b *ResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, _ resolver.BuildOptions) (resolver.Resolver, error) {
 	r := &Resolver{
 		registry: b.registry,
 		timeout:  b.timeout,
@@ -31,8 +31,15 @@ func (b *Builder) Build(target resolver.Target, cc resolver.ClientConn, _ resolv
 	return r, nil
 }
 
-func (b *Builder) Scheme() string {
+func (b *ResolverBuilder) Scheme() string {
 	return "registry"
+}
+
+func NewResolverBuilder(registry registry.Registry, timeout time.Duration) *ResolverBuilder {
+	return &ResolverBuilder{
+		registry: registry,
+		timeout:  timeout,
+	}
 }
 
 var _ resolver.Resolver = (*Resolver)(nil)

@@ -1,4 +1,4 @@
-package balancer
+package bl
 
 import (
 	"math/rand"
