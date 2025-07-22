@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/resolver"
 )
 
+type ManagerOpt[T any] func(*Manager[T])
+
 type Manager[T any] struct {
 	grpcClients xsync.Map[string, T]
 
@@ -56,12 +58,24 @@ func (m *Manager[T]) dial(serviceName string) (*grpc.ClientConn, error) {
 	return grpc.NewClient(addr, opts...)
 }
 
+func ManagerWithInsecure() ManagerOpt[any] {
+	return func(m *Manager[any]) {
+		m.insecure = true
+	}
+}
+
 func NewManager[T any](
-	rb resolver.Builder, bb balancer.Builder, creator func(conn *grpc.ClientConn) T,
+	rb resolver.Builder, bb balancer.Builder, creator func(conn *grpc.ClientConn) T, opts ...ManagerOpt[T],
 ) *Manager[T] {
-	return &Manager[T]{
+	manager := &Manager[T]{
 		rb:      rb,
 		bb:      bb,
 		creator: creator,
 	}
+
+	for _, opt := range opts {
+		opt(manager)
+	}
+
+	return manager
 }
