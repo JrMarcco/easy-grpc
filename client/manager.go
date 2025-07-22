@@ -95,7 +95,7 @@ func (m *Manager[T]) dial(serviceName string) (*grpc.ClientConn, error) {
 
 	if m.bb != nil {
 		opts = append(opts, grpc.WithDefaultServiceConfig(
-			fmt.Sprintf(`{"loadBalancingPolicy: %q"}`, m.bb.Name()),
+			fmt.Sprintf(`{"loadBalancingPolicy": %q}`, m.bb.Name()),
 		))
 	}
 
