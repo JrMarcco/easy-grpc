@@ -56,6 +56,7 @@ func (b *ManagerBuilder[T]) Build() *Manager[T] {
 		insecure:        b.insecure,
 		keepaliveParams: b.keepaliveParams,
 		creator:         b.creator,
+		sg:              &singleflight.Group{},
 	}
 }
 
