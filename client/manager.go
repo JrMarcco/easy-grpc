@@ -67,8 +67,8 @@ func NewManagerBuilder[T any](rb resolver.Builder, bb balancer.Builder, creator 
 		creator:  creator,
 		insecure: false,
 		keepaliveParams: keepalive.ClientParameters{
-			Time:                10 * time.Second,
-			Timeout:             3 * time.Second,
+			Time:                time.Minute,
+			Timeout:             10 * time.Second,
 			PermitWithoutStream: true,
 		},
 	}
